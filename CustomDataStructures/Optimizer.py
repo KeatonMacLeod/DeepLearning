@@ -14,13 +14,15 @@ class Optimizer:
         self.epochs = 2
         self.gpu_available = torch.cuda.is_available()
         self.device = torch.device("cuda:0" if self.gpu_available else "cpu")
+        self.train()
 
     def train(self):
         for epoch in range(self.epochs):
             running_loss = 0.0
 
             # Training
-            for local_batch, local_labels in self.data_loader.training_generator:
+            for i, batch in enumerate(self.data_loader.training_generator):
+                local_batch, local_labels = batch
                 if self.gpu_available:
                     local_batch, local_labels = local_batch.to(self.device), local_labels.to(self.device)
 
@@ -29,15 +31,15 @@ class Optimizer:
 
                 # forward + backward + optimize
                 outputs = self.image_classifier(local_batch)
-                loss = self.criterion(outputs, self.data_loader.classes)
+                loss = self.criterion(outputs, local_labels)
                 loss.backward()
                 self.optimizer.step()
 
                 # print statistics
                 running_loss += loss.item()
-                if i % 2000 == 1999:  # print every 2000 mini-batches
+                if i % 10 == 9:  # print every 2000 mini-batches
                     print('[%d, %5d] loss: %.3f' %
-                          (epoch + 1, i + 1, running_loss / 2000))
+                          (epoch + 1, i + 1, running_loss / 10))
                     running_loss = 0.0
 
             # # Validation

@@ -1,23 +1,28 @@
-import torch
 from torch.utils import data
+from PIL import Image
+import numpy as np
+import torchvision.transforms as transforms
 
 
 class ImageDataset(data.Dataset):
-    def __init__(self, list_IDs, labels, data_directory):
+    def __init__(self, ids, labels, data_directory):
+        self.ids = ids
         self.labels = labels
-        self.list_IDs = list_IDs
         self.data_directory = data_directory
+        self.image_size = 200
+
+        # Transforms the images into a representation which can be used for training and testing -> investigate why
+        # we are using these sizes for these datasets later
+        self.transform = transforms.Compose([transforms.CenterCrop(self.image_size), transforms.ToTensor()])
 
     # Returns the number of samples
     def __len__(self):
-        return len(self.list_IDs)
+        return len(self.ids)
 
     def __getitem__(self, index):
-        # Select sample
-        ID = self.list_IDs[index]
-
-        # Load data and get label
-        X = torch.load(self.data_directory + "\\" + ID)
-        y = self.labels[ID]
-
-        return X, y
+        image = Image.open(self.data_directory + "\\" + self.ids[index])
+        image.load()
+        image = self.transform(image)
+        image_data = np.asarray(image, dtype="float32")
+        label = self.labels[self.ids[index]]
+        return [image_data, label]

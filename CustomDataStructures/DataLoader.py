@@ -2,19 +2,22 @@ import os
 from torch.utils import data
 from CustomDataStructures.ImageDataset import ImageDataset
 
+
 class DataLoader:
 
     def __init__(self):
         self.data_directory = "\\data"
         self.params = {'batch_size': 64, 'shuffle': True, 'num_workers': 6}
         self.partition = {"train": [], "validation": []}
-        self.labels = []
+        self.label_lookup = {}
+        self.labels = {}
         self.classes = []
         self.train_set_percentage = .60
 
         # Initialized later on
         self.training_generator = None
         self.validation_generator = None
+        self.load_data()
 
     # Loads all of the data into the corresponding training and validation generators
     def load_data(self):
@@ -29,14 +32,15 @@ class DataLoader:
     # Splits the data up into training and validation sets
     def create_partitions_and_labels(self):
         self.classes = [d for d in os.listdir(os.getcwd() + self.data_directory)]
-        for class_name in self.classes:
+        for i, class_name in enumerate(self.classes):
             class_full_path = os.getcwd() + self.data_directory + "\\" + class_name
             num_images = len(os.listdir(class_full_path))
             train_set_size = num_images * self.train_set_percentage
+            self.label_lookup[i] = class_name
             for root, dirs, files in os.walk(class_full_path):
-                for i, image_id in enumerate(files):
-                    if i < train_set_size:
+                for j, image_id in enumerate(files):
+                    if j < train_set_size:
                         self.partition['train'].append(class_name + "\\" + image_id)
                     else:
                         self.partition['validation'].append(class_name + "\\" + image_id)
-                    self.labels.append(class_name)
+                    self.labels[class_name + "\\" + image_id] = i

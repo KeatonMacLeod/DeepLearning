@@ -1,25 +1,11 @@
-import torch
-import torchvision
-import os
-from os import listdir
-from os.path import isfile, join
-from torch.utils import data
 import torch.nn as nn
-import torch.functional as F
-from torchvision import transforms
-from CustomDataStructures.ImageDataset import ImageDataset
+import torch.nn.functional as F
 
 
 class ImageClassifier(nn.Module):
 
     def __init__(self):
         super(ImageClassifier, self).__init__()
-
-        # Transforms the images into a representation which can be used for training and testing -> investigate why
-        # we are using these sizes for these datasets later
-        self.transform_image = transforms.Compose([transforms.Resize(256), transforms.CenterCrop(256), transforms.ToTensor(),
-                                                   transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                                                        std=[0.229, 0.224, 0.225])])
 
         # A convolution layer convolves the input tensors into a more abstract / higher-level representation which help
         # to combat overfitting during training which should hopefully yield better results when classifying later on
@@ -35,9 +21,9 @@ class ImageClassifier(nn.Module):
         # inputs it's receiving from the layers before it. In this case, we're going to perform the linear transform of
         # multiplying the inputs from the network by the weight matrix
         # The operation we perform here is y = Wx + b -> where x is the input, W is the weight matrix, and b is the bias
-        self.fc1 = nn.Linear(16 * 4 * 4, 120)
-        self.fc2 = nn.Linear(120, 84)
-        self.fc3 = nn.Linear(84, 10)
+        self.fc1 = nn.Linear(33135, 64)
+        self.fc2 = nn.Linear(64, 32)
+        self.fc3 = nn.Linear(32, 5)
 
     # We only need to define the "forward" operations in our neural network, the "backward" operations where the
     # gradients will be computed are automatically computed via autograd which is built-in to the PyTorch library
@@ -47,7 +33,7 @@ class ImageClassifier(nn.Module):
         # interleaved activation functions, our model would always be linear, thus we interleave non-linear activation
         # functions between our convolution layer to "learn more" about our network
         x = F.max_pool2d(F.relu(self.conv1(x)), (2, 2))
-        x = F.max_pool2d(F.relu(self.conv2(x)))
+        x = F.max_pool2d(F.relu(self.conv2(x)), 2)
 
         # -1 means the dimensions are inferred from the other dimensions -> this is just a matrix reshape
         x = x.view(-1, self.num_flat_features(x))
