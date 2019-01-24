@@ -14,9 +14,10 @@ class DataLoader:
         self.classes = []
         self.train_set_percentage = .60
 
-        # Initialized later on
         self.training_generator = None
         self.validation_generator = None
+
+        # Populate self.training_generator and validation_generator
         self.load_data()
 
     # Loads all of the data into the corresponding training and validation generators
