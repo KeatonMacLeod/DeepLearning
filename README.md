@@ -13,6 +13,9 @@ The purpose of this example is to implement all of the concepts covered in the g
 to add additional functionality that will be used in the neural network for our project, including:
 
 1.) Loading a custom image data utilizing parallel CPU computation for extremely efficient loading times (X)
+
 2.) Checking for the presence of a GPU utilizing it to train the network (X)
+
 3.) Saving the weights of the most accurate model on the validation set (X)
+
 4.) Loading a network from a file to classify a single/batch of images -> NOT YET IMPLEMENTED
