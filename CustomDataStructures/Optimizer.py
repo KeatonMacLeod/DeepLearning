@@ -19,7 +19,9 @@ class Optimizer:
         self.optimize()
 
     def train(self, epoch):
-        print('\nEpoch: %d' % epoch)
+        print("-" * 100)
+        print('Epoch: %d' % epoch)
+        print("-" * 100)
         train_loss = 0
         correct = 0
         total = 0
@@ -31,24 +33,24 @@ class Optimizer:
                 self.image_classifier.cuda()
                 local_batch, local_labels = local_batch.to(self.device), local_labels.to(self.device)
 
-            # Zero the parameter gradients
-            self.optimizer.zero_grad()
+                # Zero the parameter gradients
+                self.optimizer.zero_grad()
 
-            # Forward + backward + optimize
-            outputs = self.image_classifier(local_batch)
-            loss = self.criterion(outputs, local_labels)
-            loss.backward()
-            self.optimizer.step()
+                # Forward + backward + optimize
+                outputs = self.image_classifier(local_batch)
+                loss = self.criterion(outputs, local_labels)
+                loss.backward()
+                self.optimizer.step()
 
-            train_loss += loss.item()
-            _, predicted = outputs.max(1)
-            total += local_labels.size(0)
-            correct += predicted.eq(local_labels).sum().item()
+                train_loss += loss.item()
+                _, predicted = outputs.max(1)
+                total += local_labels.size(0)
+                correct += predicted.eq(local_labels).sum().item()
 
-            if batch_id % 10 == 9:
-                print('[%d, %5d] TRAINING LOSS: %.3f' %
-                      (epoch + 1, batch_id + 1, train_loss / 10))
-                train_loss = 0.0
+                if batch_id % 10 == 9:
+                    print('[%d, %5d] TRAINING LOSS: %.3f' %
+                          (epoch + 1, batch_id + 1, train_loss / 10))
+                    train_loss = 0.0
 
     def validate(self, epoch):
         test_loss = 0
@@ -63,33 +65,36 @@ class Optimizer:
                 if self.gpu_available:
                     local_batch, local_labels = local_batch.to(self.device), local_labels.to(self.device)
 
-                # Test validation loss on the local batch
-                outputs = self.image_classifier(local_batch)
-                loss = self.criterion(outputs, local_labels)
+                    # Test validation loss on the local batch
+                    outputs = self.image_classifier(local_batch)
+                    loss = self.criterion(outputs, local_labels)
 
-                test_loss += loss.item()
-                _, predicted = outputs.max(1)
-                total += local_labels.size(0)
-                correct += predicted.eq(local_labels).sum().item()
+                    test_loss += loss.item()
+                    _, predicted = outputs.max(1)
+                    total += local_labels.size(0)
+                    correct += predicted.eq(local_labels).sum().item()
 
-                if batch_id % 10 == 9:
-                    print('[%d, %5d] TEST LOSS: %.3f' %
-                          (epoch + 1, batch_id + 1, test_loss / 10))
-                    test_loss = 0.0
+                    if batch_id % 10 == 9:
+                        print('[%d, %5d] TEST LOSS: %.3f' %
+                              (epoch + 1, batch_id + 1, test_loss / 10))
+                        test_loss = 0.0
 
         # Save checkpoint.
-        acc = 100. * correct / total
-        if acc > self.best_accuracy:
-            print('Saving..')
+        accuracy = 100. * correct / total
+        print('Validation Accuracy: {}'.format(accuracy))
+        if accuracy > self.best_accuracy:
+            print('Current Validation Accuracy: {} better than Current Best Accuracy: {}'.format(accuracy, self.best_accuracy))
+            print('- Saving Model -')
             state = {
                 'net': self.image_classifier.state_dict(),
-                'acc': acc,
+                'acc': accuracy,
                 'epoch': epoch,
             }
             if not os.path.isdir('checkpoint'):
                 os.mkdir('checkpoint')
             torch.save(state, './checkpoint/ckpt.t7')
-            self.best_accuracy = acc
+            self.best_accuracy = accuracy
+        print()
 
     def optimize(self):
         for epoch in range(self.epochs):
