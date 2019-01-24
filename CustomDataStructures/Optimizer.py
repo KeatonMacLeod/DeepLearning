@@ -30,10 +30,10 @@ class Optimizer:
             if self.gpu_available:
                 local_batch, local_labels = local_batch.to(self.device), local_labels.to(self.device)
 
-            # zero the parameter gradients
+            # Zero the parameter gradients
             self.optimizer.zero_grad()
 
-            # forward + backward + optimize
+            # Forward + backward + optimize
             outputs = self.image_classifier(local_batch)
             loss = self.criterion(outputs, local_labels)
             loss.backward()
@@ -53,13 +53,16 @@ class Optimizer:
         test_loss = 0
         correct = 0
         total = 0
+
+        # We don't need to store gradients during validation since we're not training at this point, just testing the
+        # current classification ability of our model, so we use torch.no_grad() to save memory
         with torch.no_grad():
-            # Training
             for batch_id, batch in enumerate(self.data_loader.validation_generator):
                 local_batch, local_labels = batch
                 if self.gpu_available:
                     local_batch, local_labels = local_batch.to(self.device), local_labels.to(self.device)
 
+                # Test validation loss on the local batch
                 outputs = self.image_classifier(local_batch)
                 loss = self.criterion(outputs, local_labels)
 

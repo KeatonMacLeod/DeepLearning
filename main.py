@@ -15,7 +15,7 @@ to add additional functionality that will be used in the neural network for our 
 
 1.) Loading a custom image data utilizing parallel CPU computation for extremely efficient loading times (X)
 2.) Checking for the presence of a GPU utilizing it to train the network (X)
-3.) Saving the weights at the end of training -> NOT YET IMPLEMENTED
+3.) Saving the weights of the most accurate model on the validation set (X)
 4.) Loading a network from a file -> don't need to retrain each time you want to classify images -> NOT YET IMPLEMENTED
 """
 

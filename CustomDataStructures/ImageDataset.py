@@ -11,8 +11,7 @@ class ImageDataset(data.Dataset):
         self.data_directory = data_directory
         self.image_size = 200
 
-        # Transforms the images into a representation which can be used for training and testing -> investigate why
-        # we are using these sizes for these datasets later
+        # Transforms the images into a representation which can be used for training and testing
         self.transform = transforms.Compose([transforms.CenterCrop(self.image_size), transforms.ToTensor()])
 
     # Returns the number of samples
