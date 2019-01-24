@@ -28,6 +28,7 @@ class Optimizer:
         for batch_id, batch in enumerate(self.data_loader.training_generator):
             local_batch, local_labels = batch
             if self.gpu_available:
+                self.image_classifier.cuda()
                 local_batch, local_labels = local_batch.to(self.device), local_labels.to(self.device)
 
             # Zero the parameter gradients
