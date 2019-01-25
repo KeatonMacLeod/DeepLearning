@@ -24,7 +24,9 @@ class Optimizer:
         self.optimize()
 
     def train(self, epoch):
-        print('\nEpoch: %d' % epoch)
+        print("-" * 100)
+        print('Epoch: %d' % epoch)
+        print("-" * 100)
         train_loss = 0
         correct = 0
         total = 0
@@ -33,12 +35,13 @@ class Optimizer:
         for batch_id, batch in enumerate(self.data_loader.training_generator):
             local_batch, local_labels = batch
             if self.gpu_available:
+                self.image_classifier.cuda()
                 local_batch, local_labels = local_batch.to(self.device), local_labels.to(self.device)
 
-            # zero the parameter gradients
+            # Zero the parameter gradients
             self.optimizer.zero_grad()
 
-            # forward + backward + optimize
+            # Forward + backward + optimize
             outputs = self.image_classifier(local_batch)
             loss = self.criterion(outputs, local_labels)
             loss.backward()
@@ -59,13 +62,16 @@ class Optimizer:
         validation_loss = 0
         correct = 0
         total = 0
+
+        # We don't need to store gradients during validation since we're not training at this point, just testing the
+        # current classification ability of our model, so we use torch.no_grad() to save memory
         with torch.no_grad():
-            # Training
             for batch_id, batch in enumerate(self.data_loader.validation_generator):
                 local_batch, local_labels = batch
                 if self.gpu_available:
                     local_batch, local_labels = local_batch.to(self.device), local_labels.to(self.device)
 
+                # Test validation loss on the local batch
                 outputs = self.image_classifier(local_batch)
                 loss = self.criterion(outputs, local_labels)
 
@@ -81,18 +87,20 @@ class Optimizer:
                     validation_loss = 0.0
 
         # Save checkpoint.
-        acc = 100. * correct / total
-        if acc > self.best_accuracy:
-            print('- Saving Most Accurate Model -')
+        accuracy = 100. * correct / total
+        print('Validation Accuracy: {}'.format(accuracy))
+        if accuracy > self.best_accuracy:
+            print('Current Validation Accuracy: {} better than Current Best Accuracy: {}'.format(accuracy, self.best_accuracy))
+            print('- Saving Model -')
             state = {
                 'net': self.image_classifier.state_dict(),
-                'acc': acc,
+                'acc': accuracy,
                 'epoch': epoch,
             }
             if not os.path.isdir('checkpoint'):
                 os.mkdir('checkpoint')
             torch.save(state, './checkpoint/ckpt.t7')
-            self.best_accuracy = acc
+            self.best_accuracy = accuracy
         print()
 
     def test(self):
@@ -115,8 +123,7 @@ class Optimizer:
                 correct += predicted.eq(local_labels).sum().item()
 
                 if batch_id % self.loss_print_iterator == 9:
-                    print('[%5d] TEST LOSS: %.3f' %
-                          (batch_id + 1, test_loss / self.loss_print_iterator))
+                    print("FINAL MODEL TEST LOSS: {}".format(test_loss / self.loss_print_iterator))
                     test_loss = 0.0
 
         print("- MODEL TRAINING, VALIDATION AND TESTING COMPLETED -")
