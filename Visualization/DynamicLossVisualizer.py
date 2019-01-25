@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 plt.ion()
 
 
-class DynamicLossVisualizer():
+class DynamicLossVisualizer:
 
     def __init__(self, iterations, epochs):
 
@@ -20,13 +20,10 @@ class DynamicLossVisualizer():
         self.y_max = 2
 
         self.figure = None
+        self.axis = None
 
-        # Axis and lines for the training data
-        self.training_axis = None
+        # Lines for the training + validation data
         self.training_lines = None
-
-        # Axis and lines for the validation data
-        self.validation_axis = None
         self.validation_lines = None
 
         # The x axis for both the training + validation data
@@ -41,39 +38,28 @@ class DynamicLossVisualizer():
 
     def on_launch(self):
         # Set up plot
-        self.figure, self.training_axis = plt.subplots()
-        self.training_lines, = self.training_axis.plot([], [], 'o')
-
-        # self.validation_axis = self.figure.add_subplot(111)
-        # self.validation_lines, = self.validation_axis.plot([], [], 'r')
+        self.figure, self.axis = plt.subplots()
+        self.training_lines, = self.axis.plot([], [], '-o')
+        self.validation_lines, = self.axis.plot([], [], '-r')
 
         # Autoscale on unknown axis and known lims on the other
-        self.training_axis.set_xlim(self.x_min, self.x_max)
-        self.training_axis.set_ylim(self.y_min, self.y_max)
-        self.training_axis.grid()
-
-        # Autoscale on unknown axis and known lims on the other
-        # self.validation_axis.set_xlim(self.x_min, self.x_max)
-        # self.validation_axis.set_ylim(self.y_min, self.y_max)
-        # self.validation_axis.grid()
+        self.axis.set_xlim(self.x_min, self.x_max)
+        self.axis.set_ylim(self.y_min, self.y_max)
+        self.axis.grid()
 
     def update_visualization_loss(self, new_data, training=False):
         self.x_axis_plot_points.append(self.counter)
         self.training_lines.set_xdata(self.x_axis_plot_points)
-        # self.validation_lines.set_xdata(self.x_axis_plot_points)
         self.counter += 1
         if training:
             self.y_axis_training_loss_plot_points.append(new_data)
             self.training_lines.set_ydata(self.y_axis_training_loss_plot_points)
         else:
             self.y_axis_validation_loss_plot_points.append(new_data)
-            # self.validation_lines.set_ydata(self.y_axis_validation_loss_plot_points)
+            self.validation_lines.set_ydata(self.y_axis_validation_loss_plot_points)
 
-        self.training_axis.relim()
-        self.training_axis.autoscale_view()
-
-        # self.validation_axis.relim()
-        # self.validation_axis.autoscale_view()
+        self.axis.relim()
+        self.axis.autoscale_view()
 
         # We need to draw *and* flush
         self.figure.canvas.draw()
