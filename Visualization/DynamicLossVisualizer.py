@@ -1,3 +1,10 @@
+"""
+The purpose of this class is to have the ability to visualize our current training + validation losses dynamically
+on a graph so that it is easier to see whether there is any underfitting / overfitting occuring in the current model
+we're training. This is done by passing the losses during the training and validation phases to the function
+update_visualization_loss, which will update the graph dynamically.
+"""
+
 import matplotlib.pyplot as plt
 plt.ion()
 
