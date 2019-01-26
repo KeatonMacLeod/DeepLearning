@@ -9,6 +9,8 @@ class Optimizer:
     def __init__(self, image_classifier, data_loader):
         self.image_classifier = image_classifier
         self.data_loader = data_loader
+        self.checkpoint_directory = './checkpoint/'
+        self.last_run_directory = './last-run/'
         self.criterion = nn.CrossEntropyLoss()
         self.learning_rate = 0.001
         self.momentum = 0.9
@@ -19,14 +21,14 @@ class Optimizer:
         self.loss_print_iterator = 10  # How often the losses print
         self.gpu_available = torch.cuda.is_available()
         self.device = torch.device("cuda:0" if self.gpu_available else "cpu")
-        # self.loss_visualizer = LossVisualizer()
-        self.dynamic_loss_visualizer = DynamicLossVisualizer(self.epochs, self.iterations)
+        self.dynamic_loss_visualizer = DynamicLossVisualizer(self.epochs)
         self.optimize()
 
     def train(self, epoch):
         print("-" * 100)
         print('Epoch: %d' % epoch)
         print("-" * 100)
+        epoch_train_loss = 0
         train_loss = 0
         correct = 0
         total = 0
@@ -55,10 +57,13 @@ class Optimizer:
             if batch_id % self.loss_print_iterator == 9:
                 print('[%d, %5d] TRAINING LOSS: %.3f' %
                       (epoch + 1, batch_id + 1, train_loss / self.loss_print_iterator))
-                self.dynamic_loss_visualizer.update_visualization_loss(train_loss / self.loss_print_iterator, training=True)
+                epoch_train_loss = train_loss / self.loss_print_iterator
                 train_loss = 0.0
 
+        return epoch_train_loss
+
     def validate(self, epoch):
+        epoch_validation_loss = 0
         validation_loss = 0
         correct = 0
         total = 0
@@ -83,25 +88,10 @@ class Optimizer:
                 if batch_id % self.loss_print_iterator == 9:
                     print('[%d, %5d] VALIDATION LOSS: %.3f' %
                           (epoch + 1, batch_id + 1, validation_loss / self.loss_print_iterator))
-                    # self.dynamic_loss_visualizer.update_visualization_loss(test_loss / self.loss_print_iterator, training=False)
+                    epoch_validation_loss = validation_loss / self.loss_print_iterator
                     validation_loss = 0.0
 
-        # Save checkpoint.
-        accuracy = 100. * correct / total
-        print('Validation Accuracy: {}'.format(accuracy))
-        if accuracy > self.best_accuracy:
-            print('Current Validation Accuracy: {} better than Current Best Accuracy: {}'.format(accuracy, self.best_accuracy))
-            print('- Saving Model -')
-            state = {
-                'net': self.image_classifier.state_dict(),
-                'acc': accuracy,
-                'epoch': epoch,
-            }
-            if not os.path.isdir('checkpoint'):
-                os.mkdir('checkpoint')
-            torch.save(state, './checkpoint/ckpt.t7')
-            self.best_accuracy = accuracy
-        print()
+        return correct, total, epoch_validation_loss
 
     def test(self):
         test_loss = 0
@@ -125,16 +115,39 @@ class Optimizer:
                 if batch_id % self.loss_print_iterator == 9:
                     print("FINAL MODEL TEST LOSS: {}".format(test_loss / self.loss_print_iterator))
                     test_loss = 0.0
-
+        if not os.path.isdir('last-run'):
+            os.mkdir('last-run')
+        self.dynamic_loss_visualizer.figure.savefig(self.last_run_directory)
         print("- MODEL TRAINING, VALIDATION AND TESTING COMPLETED -")
+
+    def save_most_accurate_model(self, epoch, correct_predictions, total_predictions):
+        # Save checkpoint.
+        accuracy = 100. * correct_predictions / total_predictions
+        print('Validation Accuracy: {}'.format(accuracy))
+        if accuracy > self.best_accuracy:
+            print('Current Validation Accuracy: {} better than Current Best Accuracy: {}'.format(accuracy, self.best_accuracy))
+            print('- Saving Model -')
+            state = {
+                'net': self.image_classifier.state_dict(),
+                'acc': accuracy,
+                'epoch': epoch,
+            }
+            if not os.path.isdir('checkpoint'):
+                os.mkdir('checkpoint')
+            torch.save(state, self.checkpoint_directory + 'ckpt.t7')
+            self.dynamic_loss_visualizer.figure.savefig(self.checkpoint_directory)
+            self.best_accuracy = accuracy
+        print()
 
     def optimize(self):
         # The model will be trained with the training data in the training stage on a training data set
         # according to the training_set_percentage, and validated during the validation stage according
         # to the validation_set_percentage
         for epoch in range(self.epochs):
-            self.train(epoch)
-            self.validate(epoch)
+            epoch_train_loss = self.train(epoch)
+            correct_predictions, total_predictions, epoch_validation_loss = self.validate(epoch)
+            self.save_most_accurate_model(epoch, correct_predictions, total_predictions)
+            self.dynamic_loss_visualizer.update_visualization_loss(epoch_train_loss, epoch_validation_loss)
 
         # Calculates the final overall accuracy of the trained model using the testing set
         self.test()
